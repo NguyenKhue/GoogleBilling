@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.sample.android.trivialdrivesample.db
+package com.wacteam.android.trivialdrivesample.db
 
 import androidx.room.Database
 import androidx.room.RoomDatabase

@@ -32,11 +32,11 @@
             />
         <variable
             name="skuDetails"
-            type="com.sample.android.trivialdrivesample.MakePurchaseViewModel.SkuDetails"
+            type="com.wacteam.android.trivialdrivesample.MakePurchaseViewModel.SkuDetails"
             />
         <variable
             name="makePurchaseFragment"
-            type="com.sample.android.trivialdrivesample.ui.MakePurchaseFragment"/>
+            type="com.wacteam.android.trivialdrivesample.ui.MakePurchaseFragment"/>
     </data>
 
     <!--

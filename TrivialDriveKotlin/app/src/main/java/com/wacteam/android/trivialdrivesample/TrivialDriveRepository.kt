@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.sample.android.trivialdrivesample
+package com.wacteam.android.trivialdrivesample
 
 import android.app.Activity
 import android.util.Log
 import androidx.lifecycle.LifecycleObserver
-import com.sample.android.trivialdrivesample.billing.BillingDataSource
-import com.sample.android.trivialdrivesample.db.GameStateModel
+import com.wacteam.android.trivialdrivesample.billing.BillingDataSource
+import com.wacteam.android.trivialdrivesample.db.GameStateModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -199,7 +199,7 @@ class TrivialDriveRepository(
 
     fun debugConsumePremium() {
         CoroutineScope(Dispatchers.Main).launch {
-            billingDataSource.consumeInappPurchase(SKU_PREMIUM)
+            billingDataSource.consumeInAppPurchase(SKU_PREMIUM)
         }
     }
 

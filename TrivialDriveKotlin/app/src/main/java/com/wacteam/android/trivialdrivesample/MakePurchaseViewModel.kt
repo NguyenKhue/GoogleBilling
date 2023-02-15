@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.sample.android.trivialdrivesample
+package com.wacteam.android.trivialdrivesample
 
 import android.app.Activity
 import androidx.lifecycle.LiveData
