@@ -621,16 +621,22 @@ class BillingDataSource private constructor(
         val skuDetails = skuDetailsMap[sku]?.value
         if (null != skuDetails) {
             val offerToken = skuDetails.subscriptionOfferDetails?.get(0)?.offerToken
-            val productDetailsParamsList = offerToken?.let {
+            val productDetailsParamsList = if(!offerToken.isNullOrEmpty()){
                 listOf(
                     BillingFlowParams.ProductDetailsParams.newBuilder()
                         .setProductDetails(skuDetails)
                         .setOfferToken(offerToken)
                         .build()
                 )
+            } else {
+                listOf(
+                    BillingFlowParams.ProductDetailsParams.newBuilder()
+                        .setProductDetails(skuDetails)
+                        .build()
+                )
             }
             val billingFlowParams =
-                productDetailsParamsList?.let {
+                productDetailsParamsList.let {
                     BillingFlowParams.newBuilder().setProductDetailsParamsList(
                         productDetailsParamsList
                     )
@@ -641,7 +647,7 @@ class BillingDataSource private constructor(
                 when (heldSubscriptions.size) {
                     1 -> {
                         val purchase = heldSubscriptions[0]
-                        billingFlowParams?.setSubscriptionUpdateParams(
+                        billingFlowParams.setSubscriptionUpdateParams(
                             BillingFlowParams.SubscriptionUpdateParams.newBuilder()
                                 .setOldPurchaseToken(purchase.purchaseToken)
                                 .setReplaceProrationMode(
@@ -657,7 +663,7 @@ class BillingDataSource private constructor(
                         heldSubscriptions.size.toString() + " subscriptions subscribed to. Upgrade not possible."
                     )
                 }
-                billingFlowParams?.let {
+                billingFlowParams.let {
                     val br = billingClient.launchBillingFlow(
                         activity!!, it.build()
                     )
