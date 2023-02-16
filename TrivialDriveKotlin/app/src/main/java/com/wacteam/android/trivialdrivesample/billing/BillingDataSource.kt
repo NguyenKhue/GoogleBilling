@@ -621,27 +621,32 @@ class BillingDataSource private constructor(
         val skuDetails = skuDetailsMap[sku]?.value
         if (null != skuDetails) {
             val offerToken = skuDetails.subscriptionOfferDetails?.get(0)?.offerToken
-            val productDetailsParamsList = offerToken?.let {
+            val productDetailsParamsList = if (!offerToken.isNullOrEmpty()) {
                 listOf(
                     BillingFlowParams.ProductDetailsParams.newBuilder()
                         .setProductDetails(skuDetails)
                         .setOfferToken(offerToken)
                         .build()
                 )
+            } else {
+                listOf(
+                    BillingFlowParams.ProductDetailsParams.newBuilder()
+                        .setProductDetails(skuDetails)
+                        .build()
+                )
             }
             val billingFlowParams =
-                productDetailsParamsList?.let {
-                    BillingFlowParams.newBuilder().setProductDetailsParamsList(
-                        productDetailsParamsList
-                    )
-                }
+                BillingFlowParams.newBuilder().setProductDetailsParamsList(
+                    productDetailsParamsList
+                )
+
             val upgradeSkus = arrayOf(*upgradeSkusVarargs)
             defaultScope.launch {
                 val heldSubscriptions = getPurchases(upgradeSkus, BillingClient.ProductType.SUBS)
                 when (heldSubscriptions.size) {
                     1 -> {
                         val purchase = heldSubscriptions[0]
-                        billingFlowParams?.setSubscriptionUpdateParams(
+                        billingFlowParams.setSubscriptionUpdateParams(
                             BillingFlowParams.SubscriptionUpdateParams.newBuilder()
                                 .setOldPurchaseToken(purchase.purchaseToken)
                                 .setReplaceProrationMode(
@@ -657,17 +662,14 @@ class BillingDataSource private constructor(
                         heldSubscriptions.size.toString() + " subscriptions subscribed to. Upgrade not possible."
                     )
                 }
-                billingFlowParams?.let {
-                    val br = billingClient.launchBillingFlow(
-                        activity!!, it.build()
-                    )
-                    if (br.responseCode == BillingClient.BillingResponseCode.OK) {
-                        billingFlowInProcess.emit(true)
-                    } else {
-                        Log.e(TAG, "Billing failed: + " + br.debugMessage)
-                    }
+                val br = billingClient.launchBillingFlow(
+                    activity!!, billingFlowParams.build()
+                )
+                if (br.responseCode == BillingClient.BillingResponseCode.OK) {
+                    billingFlowInProcess.emit(true)
+                } else {
+                    Log.e(TAG, "Billing failed: + " + br.debugMessage)
                 }
-
             }
         } else {
             Log.e(TAG, "SkuDetails not found for: $sku")
