@@ -235,15 +235,17 @@ class BillingDataSource private constructor(
     fun getSkuPrice(sku: String): Flow<String> {
         val skuDetailsFlow = skuDetailsMap[sku]!!
         return skuDetailsFlow.mapNotNull { skuDetails ->
-            Log.d(TAG, "getSkuTitle: $skuDetails")
+            Log.d(TAG, "getSkuPrice: ${skuDetails?.oneTimePurchaseOfferDetails?.formattedPrice}")
+            Log.d(TAG, "getSkuPrice: ${skuDetails?.subscriptionOfferDetails?.first()?.pricingPhases?.pricingPhaseList?.first()?.formattedPrice}")
             skuDetails?.oneTimePurchaseOfferDetails?.formattedPrice
+                ?: skuDetails?.subscriptionOfferDetails?.first()?.pricingPhases?.pricingPhaseList?.first()?.formattedPrice
         }
     }
 
     fun getSkuDescription(sku: String): Flow<String> {
         val skuDetailsFlow = skuDetailsMap[sku]!!
         return skuDetailsFlow.mapNotNull { skuDetails ->
-            Log.d(TAG, "getSkuTitle: $skuDetails")
+            Log.d(TAG, "getSkuTitle: ${skuDetails?.description}")
             skuDetails?.description
         }
     }
@@ -621,27 +623,25 @@ class BillingDataSource private constructor(
         val skuDetails = skuDetailsMap[sku]?.value
         if (null != skuDetails) {
             val offerToken = skuDetails.subscriptionOfferDetails?.get(0)?.offerToken
-            val productDetailsParamsList = if(!offerToken.isNullOrEmpty()){
-                listOf(
-                    BillingFlowParams.ProductDetailsParams.newBuilder()
-                        .setProductDetails(skuDetails)
+            val params = BillingFlowParams.ProductDetailsParams.newBuilder()
+                .setProductDetails(skuDetails)
+            val productDetailsParamsList = listOf(
+                if (!offerToken.isNullOrEmpty()) {
+                    params
                         .setOfferToken(offerToken)
                         .build()
-                )
-            } else {
-                listOf(
-                    BillingFlowParams.ProductDetailsParams.newBuilder()
-                        .setProductDetails(skuDetails)
+                } else {
+                    params
                         .build()
-                )
-            }
-            val billingFlowParams =
-                productDetailsParamsList.let {
-                    BillingFlowParams.newBuilder().setProductDetailsParamsList(
-                        productDetailsParamsList
-                    )
                 }
+            )
+            val billingFlowParams =
+                BillingFlowParams.newBuilder().setProductDetailsParamsList(
+                    productDetailsParamsList
+                )
+
             val upgradeSkus = arrayOf(*upgradeSkusVarargs)
+
             defaultScope.launch {
                 val heldSubscriptions = getPurchases(upgradeSkus, BillingClient.ProductType.SUBS)
                 when (heldSubscriptions.size) {
@@ -663,17 +663,14 @@ class BillingDataSource private constructor(
                         heldSubscriptions.size.toString() + " subscriptions subscribed to. Upgrade not possible."
                     )
                 }
-                billingFlowParams.let {
-                    val br = billingClient.launchBillingFlow(
-                        activity!!, it.build()
-                    )
-                    if (br.responseCode == BillingClient.BillingResponseCode.OK) {
-                        billingFlowInProcess.emit(true)
-                    } else {
-                        Log.e(TAG, "Billing failed: + " + br.debugMessage)
-                    }
+                val br = billingClient.launchBillingFlow(
+                    activity!!, billingFlowParams.build()
+                )
+                if (br.responseCode == BillingClient.BillingResponseCode.OK) {
+                    billingFlowInProcess.emit(true)
+                } else {
+                    Log.e(TAG, "Billing failed: + " + br.debugMessage)
                 }
-
             }
         } else {
             Log.e(TAG, "SkuDetails not found for: $sku")
